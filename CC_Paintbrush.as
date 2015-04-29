@@ -169,7 +169,7 @@ package {
 		
 			/* Use a ColorTransform object to change the shapeSize MovieClip color */
 			ct.color = colors[index];
-			shapeSize.transform.colorTransform = ct;
+			//shapeSize.transform.colorTransform = ct;
 		}
 		
 		
@@ -233,7 +233,7 @@ package {
 			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
 
 			ct.color = colors[0];
-			shapeSize.transform.colorTransform = ct;
+			//shapeSize.transform.colorTransform = ct;
 		}
 
 		/**
@@ -247,7 +247,7 @@ package {
 			CANVAS.addChild(pencilDraw); //Add that shape to the CANVAS MovieClip
 		 
 			pencilDraw.graphics.moveTo(xPos, yPos); //Moves the Drawing Position to the Mouse Position
-			pencilDraw.graphics.lineStyle(shapeSize.width, activeColor);//Sets the line thickness to the ShapeSize MovieClip size and sets its color to the current active color
+			pencilDraw.graphics.lineStyle(BRUSHES.brush1.width, activeColor);//Sets the line thickness to the ShapeSize MovieClip size and sets its color to the current active color
 		 
 			if(paramDraw.getValue() >= 0.5)
 			{
@@ -284,6 +284,63 @@ package {
 			pencilDraw.graphics.lineTo(xPos, yPos); //Draws a line from the current Mouse position to the moved Mouse position
 		}
 		
+
+		/**
+		*
+		* The Eraser tool
+		*
+		**/
+		private function EraserTool():void
+		{
+			/* Quit active tool */
+		
+			quitActiveTool();
+		
+			/* Set to Active */
+		
+			active = "Eraser";
+		
+			/* Listeners */
+		
+			//CANVAS.addEventListener(MouseEvent.MOUSE_DOWN, startEraserTool);
+			//CANVAS.addEventListener(MouseEvent.MOUSE_UP, stopEraserTool);
+		
+			/* Highlight */
+			//highlightTool(eraser);
+			//hideTools(pencil, txt);
+		
+			/* Use White Color */
+			ct.color = 0xFFFFFF;
+			//shapeSize.transform.colorTransform = ct;
+		}
+		
+		/**
+		*
+		* Start the erasing
+		*
+		**/
+		private function startEraserTool():void
+		{
+			pencilDraw = new Shape();
+			CANVAS.addChild(pencilDraw);
+		 
+			pencilDraw.graphics.moveTo(xPos, yPos);
+			pencilDraw.graphics.lineStyle(BRUSHES.brush1.width, 0xFFFFFF); //White Color
+		 
+			CANVAS.addEventListener(Event.ENTER_FRAME, drawEraserTool);
+		}
+		
+
+		private function drawEraserTool(e:Event):void
+		{
+			pencilDraw.graphics.lineTo(xPos, yPos);
+		}
+		 
+		private function stopEraserTool(e:Event):void
+		{
+			CANVAS.removeEventListener(Event.ENTER_FRAME, drawEraserTool);
+		}
+
 		/**
 		*
 		* Clear the canvas
@@ -345,12 +402,10 @@ package {
 		**/
 		private function changeShapeSize():void
 		{
-			if (shapeSize.width >= 50)
+			/*if (shapeSize.width >= 50)
 			{
 				shapeSize.width = 1;
 				shapeSize.height = 1;
-		 
-				/* TextFormat */
 		 
 				textformat.size = 16;
 			}
@@ -359,9 +414,8 @@ package {
 				shapeSize.width += 5;
 				shapeSize.height=shapeSize.width;
 		 
-				/* TextFormat */
 				textformat.size+=5;
-			}
+			}*/
 		}
 
 		/**
