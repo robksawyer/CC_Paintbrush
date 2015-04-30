@@ -374,7 +374,8 @@ package {
 				}
 				else if(paramCurve.getValue() == true)
 				{
-					pencilDraw.graphics.curveTo(x1Pos, y1Pos, x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+					//TODO: Figure out how to keep this within the bounds
+					pencilDraw.graphics.curveTo(x1Pos, y2Pos, x2Pos, y1Pos); //Draws a line from the current Mouse position to the moved Mouse position
 				}
 				else
 				{
@@ -730,6 +731,10 @@ package {
 
 			//Update the brush size
 			brushSize = tool.width;
+			if(brushSize < 1)
+			{
+				brushSize = 1;
+			}
 
 			//Highlight the current tool
 			tool.gotoAndStop(2);
