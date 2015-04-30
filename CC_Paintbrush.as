@@ -64,6 +64,7 @@ package {
 		private var paramPencil:EventParameter;
 		private var paramEraser:EventParameter;
 		private var paramClear:EventParameter;
+		private var paramHideApp:EventParameter;
 
 		private var paramLine:BooleanParameter;
 		private var paramCurve:BooleanParameter;
@@ -80,9 +81,10 @@ package {
 		private var paramBrushSize:FloatParameter;
 		private var paramBrushColor:FloatParameter;
 
-		var totalBrushes = 12;
-		var totalPencils = 3;
-		var totalColors = 28;
+		private var totalBrushes = 12;
+		private var totalPencils = 3;
+		private var totalColors = 28;
+		private var appHidden = false;
 
 		private var prevX1Pos:Number = 0;
 		private var prevY1Pos:Number = 0;
@@ -128,8 +130,10 @@ package {
 
 		/*****************PUBLIC********************/
 
+		public var BG:MovieClip;
 		public var CANVAS:MovieClip;
 		public var SWATCH:MovieClip;
+		public var BRUSH:MovieClip;
 		public var PENCIL:MovieClip;
 		public var ERASER:MovieClip;
 		public var BRUSHES:MovieClip;
@@ -150,8 +154,10 @@ package {
 			MonsterDebugger.initialize(this);
 			MonsterDebugger.clear();
 
+			BG = this["bg"];
 			CANVAS = this["canvas"];
 			SWATCH = this["colorSwatch"];
+			BRUSH = this["brush"];
 			PENCIL = this["pencil"];
 			ERASER = this["eraser"];
 			BRUSHES = this["brushes"];
@@ -212,10 +218,11 @@ package {
 		  MonsterDebugger.trace(this, "Iniailizing Resolume parameters.", "Init Phase");
 		  
 		  //Floats
-		  paramBrush = resolume.addEventParameter("Brush");
-		  paramPencil = resolume.addEventParameter("Pencil");
-		  paramEraser = resolume.addEventParameter("Eraser");
+		  paramBrush = resolume.addEventParameter("Start Brush");
+		  paramPencil = resolume.addEventParameter("Start Pencil");
+		  paramEraser = resolume.addEventParameter("Start Eraser");
 		  paramClear = resolume.addEventParameter("Clear");
+		  paramHideApp = resolume.addEventParameter("Toggle App");
 
 		  paramLine = resolume.addBooleanParameter("Make Lines", false);
 		  paramCurve = resolume.addBooleanParameter("Make Curves", false);
@@ -229,8 +236,8 @@ package {
 		  paramBrushXPos = resolume.addFloatParameter("Brush X Pos", 0.0 );
 		  paramBrushYPos = resolume.addFloatParameter("Brush Y Pos", 0.0 );
 		  //
-		  paramBrushSize = resolume.addFloatParameter("Brush Size", 0.5 );
-		  paramBrushColor = resolume.addFloatParameter("Brush Color", 0.1 );
+		  paramBrushSize = resolume.addFloatParameter("Brush Size", 0.14 );
+		  paramBrushColor = resolume.addFloatParameter("Brush Color", 0.0 );
 		}
 	  
 		/**
@@ -280,11 +287,12 @@ package {
 
 
 			/* Highlight, sets the Pencil Tool Icon to the color version, and hides any other tool */
-			highlightTool(brush);
-			hideTools(eraser, pencil);
+			highlightTool(BRUSH);
+			hideTools(ERASER, PENCIL);
 
 			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
 			chooseColor(paramBrushColor.getValue());
+			changeBrushSize();
 
 			//Start the drawing
 			if(drawTimer && drawTimer.running)
@@ -348,7 +356,7 @@ package {
 				}
 				else
 				{
-					pencilDraw.graphics.lineTo(x1Pos, y1Pos); //Draws a line from the current Mouse position to the moved Mouse position
+					pencilDraw.graphics.lineTo(x1Pos+1, y1Pos+1); //Draws a line from the current Mouse position to the moved Mouse position
 				}
 				
 				prevX2Pos = x2Pos;
@@ -400,11 +408,12 @@ package {
 			
 
 			/* Highlight, sets the Pencil Tool Icon to the color version, and hides any other tool */
-			highlightTool(pencil);
-			hideTools(eraser, brush);
+			highlightTool(PENCIL);
+			hideTools(ERASER, BRUSH);
 
 			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
 			chooseColor(paramBrushColor.getValue());
+			changeBrushSize();
 
 			//Start the draw timer
 			if(drawTimer && drawTimer.running)
@@ -436,7 +445,7 @@ package {
 				prevX1Pos = x1Pos;
 				prevY1Pos = y1Pos;
 			}
-			pencilDraw.graphics.lineStyle(BRUSHES.brush1.width, activeColor);//Sets the line thickness to the ShapeSize MovieClip size and sets its color to the current active color
+			pencilDraw.graphics.lineStyle(brushSize, activeColor);//Sets the line thickness to the ShapeSize MovieClip size and sets its color to the current active color
 		 
 			if(paramDraw.getValue() >= 0.5)
 			{
@@ -469,7 +478,7 @@ package {
 				}
 				else
 				{
-					pencilDraw.graphics.lineTo(x1Pos, y1Pos); //Draws a line from the current Mouse position to the moved Mouse position
+					pencilDraw.graphics.lineTo(x1Pos+1, y1Pos+1); //Draws a line from the current Mouse position to the moved Mouse position
 				}
 
 				prevX2Pos = x2Pos;
@@ -487,7 +496,6 @@ package {
 			drawing = false;
 			drawTimer.stop();
 			drawTimer.removeEventListener("timer", startPencilTool);
-			//CANVAS.removeEventListener(Event.ENTER_FRAME, startPencilTool); //Stops the drawing
 		}
 		
 
@@ -518,8 +526,8 @@ package {
 			}
 
 			/* Highlight */
-			highlightTool(eraser);
-			hideTools(pencil, brush);
+			highlightTool(ERASER);
+			hideTools(PENCIL, BRUSH);
 		
 			/* Use White Color */
 			ct.color = 0xFFFFFF;
@@ -576,7 +584,7 @@ package {
 				}
 				else
 				{
-					pencilDraw.graphics.lineTo(x1Pos, y1Pos); //Draws a line from the current Mouse position to the moved Mouse position
+					pencilDraw.graphics.lineTo(x1Pos+1, y1Pos+1); //Draws a line from the current Mouse position to the moved Mouse position
 				}
 				prevX2Pos = x2Pos;
 				prevY2Pos = y2Pos;
@@ -706,6 +714,39 @@ package {
 		}
 
 		/**
+		*
+		* Hides the MS Paint interface and only shows the painting
+		*
+		**/
+		private function toggleAppInterface():void
+		{
+			if(appHidden)
+			{
+				PENCILS.visible = true;
+				BRUSHES.visible = true;
+				PENCIL.visible = true;
+				ERASER.visible = true;
+				BRUSH.visible = true;
+				SWATCH.visible = true;
+				BG.visible = true;
+				appHidden = false;
+			}
+			else
+			{
+				PENCILS.visible = false;
+				BRUSHES.visible = false;
+				PENCIL.visible = false;
+				ERASER.visible = false;
+				BRUSH.visible = false;
+				SWATCH.visible = false;
+				BG.visible = false;
+				appHidden = true;
+			}
+			
+		}
+		
+
+		/**
 		* This method will be called everytime you change a paramater in Resolume.
 		*/
 		public function paramChanged( event:ChangeEvent ):void 
@@ -753,6 +794,32 @@ package {
 					}
 					break;
 
+				case paramClear:
+					if(clickCounter < 1)
+					{
+						clickCounter++;
+					}
+					else
+					{
+						MonsterDebugger.trace(this,"Board cleared!", "Tool");
+						clearBoard();
+						clickCounter = 0;
+					}
+					break;
+
+				case paramHideApp:
+					if(clickCounter < 1)
+					{
+						clickCounter++;
+					}
+					else
+					{
+						MonsterDebugger.trace(this,"Toggling the app interface!", "Tool");
+						toggleAppInterface();
+						clickCounter = 0;
+					}
+					break;
+
 				case paramDrawDelay:
 					drawDelay = paramDrawDelay.getValue() * 100; //Convert to milliseconds
 					drawTimer = new Timer(drawDelay, 0);
@@ -767,22 +834,22 @@ package {
 
 				case paramCursorXPos:
 					//Move the brush via the x-axis 
-					x1Pos = paramCursorXPos.getValue() * (CANVAS.width);
+					x1Pos = paramCursorXPos.getValue() * (CANVAS.width - CANVAS.x);
 					break;
 
 				case paramCursorYPos:
 					//Move the brush via the y-axis 
-					y1Pos = paramCursorYPos.getValue() * (CANVAS.height);
+					y1Pos = paramCursorYPos.getValue() * (CANVAS.height - CANVAS.y);
 					break;
 
 				case paramBrushXPos:
 					//Paints via the x-axis 
-					x2Pos = paramBrushXPos.getValue() * (CANVAS.width);
+					x2Pos = paramBrushXPos.getValue() * (CANVAS.width - CANVAS.x);
 					break;
 
 				case paramBrushYPos:
 					//Paints via the y-axis 
-					y2Pos = paramBrushYPos.getValue() * (CANVAS.height);
+					y2Pos = paramBrushYPos.getValue() * (CANVAS.height - CANVAS.y);
 					break;
 
 				case paramBrushSize:
