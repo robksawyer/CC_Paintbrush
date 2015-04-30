@@ -63,6 +63,10 @@ package {
 		private var paramBrush:EventParameter;
 		private var paramPencil:EventParameter;
 		private var paramEraser:EventParameter;
+		private var paramClear:EventParameter;
+
+		private var paramLine:BooleanParameter;
+		private var paramCurve:BooleanParameter;
 
 		private var paramDraw:FloatParameter;
 		private var paramDrawDelay:FloatParameter;
@@ -75,6 +79,10 @@ package {
 		//
 		private var paramBrushSize:FloatParameter;
 		private var paramBrushColor:FloatParameter;
+
+		var totalBrushes = 12;
+		var totalPencils = 3;
+		var totalColors = 28;
 
 		private var prevX1Pos:Number = 0;
 		private var prevY1Pos:Number = 0;
@@ -121,6 +129,7 @@ package {
 		/*****************PUBLIC********************/
 
 		public var CANVAS:MovieClip;
+		public var SWATCH:MovieClip;
 		public var PENCIL:MovieClip;
 		public var ERASER:MovieClip;
 		public var BRUSHES:MovieClip;
@@ -142,6 +151,7 @@ package {
 			MonsterDebugger.clear();
 
 			CANVAS = this["canvas"];
+			SWATCH = this["colorSwatch"];
 			PENCIL = this["pencil"];
 			ERASER = this["eraser"];
 			BRUSHES = this["brushes"];
@@ -172,19 +182,23 @@ package {
 		/**
 		*
 		* Handles changing the color of the brush/pencil
-		* @param indx:int The index that points to a color in the color array
+		* @param paramVal:Number The index that points to a color in the color array
 		* @return void
 		**/
-		private function chooseColor(indx:int = 0):void
+		private function chooseColor(paramVal:Number = 0):uint
 		{
+			var nColor:int = int(paramVal * totalColors);
 			/* Use a ColorTransform object to change the shapeSize MovieClip color */
-			ct.color = colors[indx];
+			ct.color = colors[nColor];
 			pencilDraw = new Shape();
 			CANVAS.addChild(pencilDraw);
 
 			//curBrush.transform.colorTransform = ct;
 			//curPencil.transform.colorTransform = ct;
 			pencilDraw.transform.colorTransform = ct;
+			SWATCH.transform.colorTransform = ct;
+
+			return ct.color;
 		}
 		
 		
@@ -201,6 +215,10 @@ package {
 		  paramBrush = resolume.addEventParameter("Brush");
 		  paramPencil = resolume.addEventParameter("Pencil");
 		  paramEraser = resolume.addEventParameter("Eraser");
+		  paramClear = resolume.addEventParameter("Clear");
+
+		  paramLine = resolume.addBooleanParameter("Make Lines", false);
+		  paramCurve = resolume.addBooleanParameter("Make Curves", false);
 
 		  paramDraw = resolume.addFloatParameter("Draw", 0.6 );
 		  paramDrawDelay = resolume.addFloatParameter("Draw Speed", 0.2 );
@@ -266,8 +284,7 @@ package {
 			hideTools(eraser, pencil);
 
 			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
-			ct.color = colors[0];
-			curBrush.transform.colorTransform = ct;
+			chooseColor(paramBrushColor.getValue());
 
 			//Start the drawing
 			if(drawTimer && drawTimer.running)
@@ -295,8 +312,6 @@ package {
 			}
 			MonsterDebugger.trace(this, "x1: " + x1Pos + " y1: " + y1Pos + " x2: " + x2Pos + " y2: " + y2Pos);
 			if(prevX1Pos != x1Pos || prevY1Pos != y1Pos){
-				//x1Pos -= CANVAS.x;
-				//y1Pos -= CANVAS.y;
 				pencilDraw.graphics.moveTo(x1Pos, y1Pos); //Moves the Drawing Position to the Mouse Position
 				prevX1Pos = x1Pos;
 				prevY1Pos = y1Pos;
@@ -305,9 +320,7 @@ package {
 		 
 			if(paramDraw.getValue() >= 0.5)
 			{
-				//if(!drawing){
-					drawBrushTool(); //Adds a listener to the next function
-				//}
+				drawBrushTool(); //Adds a listener to the next function
 			}
 			else
 			{
@@ -325,9 +338,19 @@ package {
 		{
 			drawing = true;
 			if(prevX2Pos != x2Pos || prevY2Pos != y2Pos){
-				//x2Pos += CANVAS.x;
-				//y2Pos += CANVAS.y;
-				pencilDraw.graphics.lineTo(x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+				if(paramLine.getValue() == true)
+				{
+					pencilDraw.graphics.lineTo(x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+				}
+				else if(paramCurve.getValue() == true)
+				{
+					pencilDraw.graphics.curveTo(x1Pos, y1Pos, x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+				}
+				else
+				{
+					pencilDraw.graphics.lineTo(x1Pos, y1Pos); //Draws a line from the current Mouse position to the moved Mouse position
+				}
+				
 				prevX2Pos = x2Pos;
 				prevY2Pos = y2Pos;
 			}
@@ -381,9 +404,7 @@ package {
 			hideTools(eraser, brush);
 
 			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
-
-			ct.color = colors[0];
-			curPencil.transform.colorTransform = ct;
+			chooseColor(paramBrushColor.getValue());
 
 			//Start the draw timer
 			if(drawTimer && drawTimer.running)
@@ -411,8 +432,6 @@ package {
 			}
 			MonsterDebugger.trace(this, "x1: " + x1Pos + " y1: " + y1Pos + " x2: " + x2Pos + " y2: " + y2Pos);
 			if(prevX1Pos != x1Pos || prevY1Pos != y1Pos){
-				//x1Pos += CANVAS.x;
-				//y1Pos += CANVAS.y;
 				pencilDraw.graphics.moveTo(x1Pos, y1Pos); //Moves the Drawing Position to the Mouse Position
 				prevX1Pos = x1Pos;
 				prevY1Pos = y1Pos;
@@ -421,9 +440,7 @@ package {
 		 
 			if(paramDraw.getValue() >= 0.5)
 			{
-				//if(!drawing){
-					drawPencilTool(); //Adds a listener to the next function
-				//}
+				drawPencilTool(); //Adds a listener to the next function
 			}
 			else
 			{
@@ -441,9 +458,20 @@ package {
 		{
 			drawing = true;
 			if(prevX2Pos != x2Pos || prevY2Pos != y2Pos){
-				//x2Pos += CANVAS.x;
-				//y2Pos += CANVAS.y;
-				pencilDraw.graphics.lineTo(x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+			
+				if(paramLine.getValue() == true)
+				{
+					pencilDraw.graphics.lineTo(x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+				}
+				else if(paramCurve.getValue() == true)
+				{
+					pencilDraw.graphics.curveTo(x1Pos, y1Pos, x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+				}
+				else
+				{
+					pencilDraw.graphics.lineTo(x1Pos, y1Pos); //Draws a line from the current Mouse position to the moved Mouse position
+				}
+
 				prevX2Pos = x2Pos;
 				prevY2Pos = y2Pos;
 			}
@@ -514,14 +542,17 @@ package {
 		**/
 		private function startEraserTool(e:Event):void
 		{
-			pencilDraw.graphics.moveTo(x1Pos, y1Pos);
-			pencilDraw.graphics.lineStyle(BRUSHES.brush1.width, 0xFFFFFF); //White Color
+			MonsterDebugger.trace(this, "x1: " + x1Pos + " y1: " + y1Pos + " x2: " + x2Pos + " y2: " + y2Pos);
+			if(prevX1Pos != x1Pos || prevY1Pos != y1Pos){
+				pencilDraw.graphics.moveTo(x1Pos, y1Pos); //Moves the Drawing Position to the Mouse Position
+				prevX1Pos = x1Pos;
+				prevY1Pos = y1Pos;
+			}
+			pencilDraw.graphics.lineStyle(BRUSHES.brush1.width, 0xFFFFFF);//Sets the line thickness to the ShapeSize MovieClip size and sets its color to the current active color
 		 
 			if(paramDraw.getValue() >= 0.5)
 			{
-				//if(!drawing){
-					drawEraserTool(); //Adds a listener to the next function
-				//}
+				drawEraserTool(); //Adds a listener to the next function
 			}
 			else
 			{
@@ -533,7 +564,23 @@ package {
 		private function drawEraserTool():void
 		{
 			drawing = true;
-			pencilDraw.graphics.lineTo(x2Pos, y2Pos);
+			if(prevX2Pos != x2Pos || prevY2Pos != y2Pos){
+			
+				if(paramLine.getValue() == true)
+				{
+					pencilDraw.graphics.lineTo(x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+				} 
+				else if(paramCurve.getValue() == true)
+				{
+					pencilDraw.graphics.curveTo(x1Pos, y1Pos, x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+				}
+				else
+				{
+					pencilDraw.graphics.lineTo(x1Pos, y1Pos); //Draws a line from the current Mouse position to the moved Mouse position
+				}
+				prevX2Pos = x2Pos;
+				prevY2Pos = y2Pos;
+			}
 		}
 		 
 		private function stopEraserTool():void
@@ -585,6 +632,10 @@ package {
 					stopEraserTool();
 					CANVAS.removeEventListener(Event.ENTER_FRAME, startEraserTool);
 					break;
+
+				case "Clear":
+					clearBoard();
+					break;
 		
 				default:
 					break;
@@ -611,57 +662,46 @@ package {
 		**/
 		private function changeBrushSize():void
 		{
-			if(active = "Brush")
+			var maxVal = 1;
+			if(active == "Brush")
 			{
-
-				if (paramBrushSize.getValue() >= 0.0 && paramBrushSize.getValue() < 0.3)
-				{
-					updateToolSize(BRUSHES.brush1, 1);
-				}
-				else if (paramBrushSize.getValue() >= 0.3 && paramBrushSize.getValue() < 0.5)
-				{
-					updateToolSize(BRUSHES.brush1, 2);
-				}
-				else
-				{
-					updateToolSize(BRUSHES.brush1, 3);
-				}
+				var nBrush:int = int(paramBrushSize.getValue() * totalBrushes);
+				MonsterDebugger.trace(this, "New brush: " + nBrush, "Brush");
+				updateToolSize(BRUSHES["brush" + nBrush]);
+				
 			}
-			else if(active = "Pencil")
+			else if(active == "Pencil")
 			{
-				if (paramBrushSize.getValue() >= 0.0 && paramBrushSize.getValue() < 0.3)
-				{
-					updateToolSize(PENCILS.pencil1, 1);
-				}
-				else if (paramBrushSize.getValue() >= 0.3 && paramBrushSize.getValue() < 0.5)
-				{
-					updateToolSize(PENCILS.pencil1, 2);
-				}
-				else
-				{
-					updateToolSize(PENCILS.pencil1, 3);
-				}
+				var nPencil:int = int(paramBrushSize.getValue() * totalPencils);
+				MonsterDebugger.trace(this, "New pencil: " + nPencil, "Pencil");
+				updateToolSize(PENCILS["pencil" + nPencil]);
 			}
 		}
 
 		private function updateToolSize(tool:MovieClip):void
 		{
+			//Remove the highlight from other brushes
 			if(active == "Brush")
 			{
-				BRUSHES.brush1.gotoAndStop(1);
-				BRUSHES.brush2.gotoAndStop(1);
-				BRUSHES.brush3.gotoAndStop(1);
+				for(var i=1;i<=totalBrushes;i++)
+				{
+					BRUSHES["brush" + i].gotoAndStop(1);
+				}
 				curBrush = tool;
 			}
 			else if(active == "Pencil")
 			{
-				PENCILS.pencil1.gotoAndStop(1);
-				PENCILS.pencil2.gotoAndStop(1);
-				PENCILS.pencil3.gotoAndStop(1);
+				for(var j=1;j<=totalPencils;j++)
+				{
+					PENCILS["pencil" + j].gotoAndStop(1);
+				}
 				curPencil = tool;
 			}
+
+			//Update the brush size
 			brushSize = tool.width;
-			
+
+			//Highlight the current tool
 			tool.gotoAndStop(2);
 		}
 
@@ -727,22 +767,22 @@ package {
 
 				case paramCursorXPos:
 					//Move the brush via the x-axis 
-					x1Pos = paramCursorXPos.getValue() * (CANVAS.width - CANVAS.x);
+					x1Pos = paramCursorXPos.getValue() * (CANVAS.width);
 					break;
 
 				case paramCursorYPos:
 					//Move the brush via the y-axis 
-					y1Pos = paramCursorYPos.getValue() * (CANVAS.height - CANVAS.y);
+					y1Pos = paramCursorYPos.getValue() * (CANVAS.height);
 					break;
 
 				case paramBrushXPos:
 					//Paints via the x-axis 
-					x2Pos = paramBrushXPos.getValue() * (CANVAS.width - CANVAS.x);
+					x2Pos = paramBrushXPos.getValue() * (CANVAS.width);
 					break;
 
 				case paramBrushYPos:
 					//Paints via the y-axis 
-					y2Pos = paramBrushYPos.getValue() * (CANVAS.height - CANVAS.y);
+					y2Pos = paramBrushYPos.getValue() * (CANVAS.height);
 					break;
 
 				case paramBrushSize:
@@ -754,9 +794,8 @@ package {
 					//Select a color 
 					if(active != "Eraser")
 					{
-						var indx:int = int( paramBrushColor.getValue() * 10 );
-						chooseColor(indx);
-						MonsterDebugger.trace(this, "Index:  " + indx + " / New Color: " + colors[indx], "Color");
+						var nColor = chooseColor(paramBrushColor.getValue());
+						MonsterDebugger.trace(this, "Index:  " + nColor + " / New Color: " + colors[nColor], "Color");
 					}
 					break;
 
