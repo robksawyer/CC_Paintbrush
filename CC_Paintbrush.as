@@ -177,9 +177,6 @@ package {
 		**/
 		private function chooseColor(indx:int = 0):void
 		{
-			//pixelValue = colorsBmd.getPixel(colors.mouseX,colors.mouseY); //Gets RGB value
-			//activeColor = pixelValue;
-		
 			/* Use a ColorTransform object to change the shapeSize MovieClip color */
 			ct.color = colors[indx];
 			pencilDraw = new Shape();
@@ -262,7 +259,17 @@ package {
 				drawDelay = paramDrawDelay.getValue() * 10000;
 				//drawRepeat = int(paramDrawRepeat.getValue() * 10);
 			}
-			
+
+
+			/* Highlight, sets the Pencil Tool Icon to the color version, and hides any other tool */
+			highlightTool(brush);
+			hideTools(eraser, pencil);
+
+			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
+			ct.color = colors[0];
+			curBrush.transform.colorTransform = ct;
+
+			//Start the drawing
 			if(drawTimer && drawTimer.running)
 			{
 				drawTimer.stop();
@@ -270,16 +277,6 @@ package {
 			drawTimer = new Timer(drawDelay, 0);
 			drawTimer.addEventListener("timer", startBrushTool);
 			drawTimer.start();
-			
-
-			/* Highlight, sets the Pencil Tool Icon to the color version, and hides any other tool */
-
-			highlightTool(brush);
-			hideTools(eraser, pencil);
-
-			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
-			ct.color = colors[0];
-			curBrush.transform.colorTransform = ct;
 		}
 
 		/**
@@ -345,7 +342,7 @@ package {
 		{
 			drawing = false;
 			drawTimer.stop();
-			drawTimer.addEventListener("timer", startBrushTool);
+			drawTimer.removeEventListener("timer", startBrushTool);
 		}
 
 		/**
@@ -378,18 +375,8 @@ package {
 				//drawRepeat = paramDrawRepeat.getValue() * 10;
 			}
 			
-			if(drawTimer && drawTimer.running)
-			{
-				drawTimer.stop();
-			}
-			drawTimer = new Timer(drawDelay, 0);
-			drawTimer.addEventListener("timer", startPencilTool);
-			drawTimer.start();
-			//CANVAS.addEventListener(Event.ENTER_FRAME, startPencilTool);
-			
 
 			/* Highlight, sets the Pencil Tool Icon to the color version, and hides any other tool */
-
 			highlightTool(pencil);
 			hideTools(eraser, brush);
 
@@ -397,6 +384,15 @@ package {
 
 			ct.color = colors[0];
 			curPencil.transform.colorTransform = ct;
+
+			//Start the draw timer
+			if(drawTimer && drawTimer.running)
+			{
+				drawTimer.stop();
+			}
+			drawTimer = new Timer(drawDelay, 0);
+			drawTimer.addEventListener("timer", startPencilTool);
+			drawTimer.start();
 		}
 
 		/**
@@ -462,7 +458,7 @@ package {
 		{
 			drawing = false;
 			drawTimer.stop();
-			drawTimer.addEventListener("timer", startPencilTool);
+			drawTimer.removeEventListener("timer", startPencilTool);
 			//CANVAS.removeEventListener(Event.ENTER_FRAME, startPencilTool); //Stops the drawing
 		}
 		
@@ -492,14 +488,6 @@ package {
 				drawDelay = paramDrawDelay.getValue() * 10000;
 				//drawRepeat = paramDrawRepeat.getValue() * 10;
 			}
-			
-			if(drawTimer && drawTimer.running)
-			{
-				drawTimer.stop();
-			}
-			drawTimer = new Timer(drawDelay, 0);
-			drawTimer.addEventListener("timer", startEraserTool);
-			drawTimer.start();
 
 			/* Highlight */
 			highlightTool(eraser);
@@ -507,7 +495,16 @@ package {
 		
 			/* Use White Color */
 			ct.color = 0xFFFFFF;
-			//shapeSize.transform.colorTransform = ct;
+			pencilDraw.transform.colorTransform = ct;
+
+			//Start the draw timer
+			if(drawTimer && drawTimer.running)
+			{
+				drawTimer.stop();
+			}
+			drawTimer = new Timer(drawDelay, 0);
+			drawTimer.addEventListener("timer", startEraserTool);
+			drawTimer.start();
 		}
 		
 		/**
@@ -522,9 +519,9 @@ package {
 		 
 			if(paramDraw.getValue() >= 0.5)
 			{
-				if(!drawing){
+				//if(!drawing){
 					drawEraserTool(); //Adds a listener to the next function
-				}
+				//}
 			}
 			else
 			{
@@ -543,7 +540,7 @@ package {
 		{
 			drawing = false;
 			drawTimer.stop();
-			drawTimer.addEventListener("timer", startEraserTool);
+			drawTimer.removeEventListener("timer", startEraserTool);
 		}
 
 		/**
@@ -573,16 +570,19 @@ package {
 			switch (active)
 			{
 				case "Pencil":
+					stopPencilTool();
 					PENCILS.visible = false;
 					CANVAS.removeEventListener(Event.ENTER_FRAME, startPencilTool);
 					break;
 
 				case "Brush":
+					stopBrushTool();
 					BRUSHES.visible = false;
 					CANVAS.removeEventListener(Event.ENTER_FRAME, startBrushTool);
 					break;
 
 				case "Eraser":
+					stopEraserTool();
 					CANVAS.removeEventListener(Event.ENTER_FRAME, startEraserTool);
 					break;
 		
@@ -620,24 +620,27 @@ package {
 				}
 				else if (paramBrushSize.getValue() >= 0.3 && paramBrushSize.getValue() < 0.5)
 				{
-					brushSize = BRUSHES.brush2.width;
-					BRUSHES.brush1.gotoAndStop(1);
-					BRUSHES.brush2.gotoAndStop(2);
-					BRUSHES.brush3.gotoAndStop(1);
-					curBrush = BRUSHES.brush2;
+					updateToolSize(BRUSHES.brush1, 2);
 				}
 				else
 				{
-					brushSize = BRUSHES.brush3.width;
-					BRUSHES.brush1.gotoAndStop(1);
-					BRUSHES.brush2.gotoAndStop(1);
-					BRUSHES.brush3.gotoAndStop(2);
-					curBrush = BRUSHES.brush3;
+					updateToolSize(BRUSHES.brush1, 3);
 				}
 			}
 			else if(active = "Pencil")
 			{
-
+				if (paramBrushSize.getValue() >= 0.0 && paramBrushSize.getValue() < 0.3)
+				{
+					updateToolSize(PENCILS.pencil1, 1);
+				}
+				else if (paramBrushSize.getValue() >= 0.3 && paramBrushSize.getValue() < 0.5)
+				{
+					updateToolSize(PENCILS.pencil1, 2);
+				}
+				else
+				{
+					updateToolSize(PENCILS.pencil1, 3);
+				}
 			}
 		}
 
@@ -660,30 +663,6 @@ package {
 			brushSize = tool.width;
 			
 			tool.gotoAndStop(2);
-		}
-
-		/**
-		*
-		* Handles changing the pencil size
-		*
-		**/
-		private function changePencilSize():void
-		{
-			if (paramBrushSize.getValue() >= 0.0 && paramBrushSize.getValue() < 0.3)
-			{
-				brushSize = PENCILS.pencil1.width;
-				curBrush = PENCILS.pencil1;
-			}
-			else if (paramBrushSize.getValue() >= 0.3 && paramBrushSize.getValue() < 0.5)
-			{
-				brushSize = PENCILS.pencil2.width;
-				curBrush = PENCILS.pencil2;
-			}
-			else
-			{
-				brushSize = PENCILS.pencil3.width;
-				curBrush = PENCILS.pencil3;
-			}
 		}
 
 		/**
@@ -773,9 +752,12 @@ package {
 
 				case paramBrushColor:
 					//Select a color 
-					var indx:int = int( paramBrushColor.getValue() * 10 );
-					chooseColor(indx);
-					MonsterDebugger.trace(this, "Index:  " + indx + " / New Color: " + colors[indx], "Color");
+					if(active != "Eraser")
+					{
+						var indx:int = int( paramBrushColor.getValue() * 10 );
+						chooseColor(indx);
+						MonsterDebugger.trace(this, "Index:  " + indx + " / New Color: " + colors[indx], "Color");
+					}
 					break;
 
 				default:
