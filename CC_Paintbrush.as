@@ -86,6 +86,8 @@ package {
 		private var totalColors = 28;
 		private var appHidden = false;
 
+		private var canvasBounds:Rectangle; 
+
 		private var prevX1Pos:Number = 0;
 		private var prevY1Pos:Number = 0;
 		private var x1Pos:Number = 0;
@@ -249,6 +251,8 @@ package {
 		{
 			MonsterDebugger.trace(this, "Initialized", "Init Phase");
 
+			canvasBounds = new Rectangle(CANVAS.x, CANVAS.y, CANVAS.width, CANVAS.height);
+
 			if(TESTING)
 			{
 				PencilTool();
@@ -294,6 +298,21 @@ package {
 			chooseColor(paramBrushColor.getValue());
 			changeBrushSize();
 
+			//This helps to test the CANVAS positioning
+			if(TESTING)
+			{
+				var squareSize:uint = 100; 
+				var square:Shape = new Shape(); 
+				square.graphics.beginFill(0xFF0000, 0.5); 
+				square.graphics.drawRect(0, 0, squareSize, squareSize); 
+				square.graphics.beginFill(0x00FF00, 0.5); 
+				square.graphics.drawRect( (CANVAS.width - CANVAS.x) - squareSize/2, 0, squareSize, squareSize); 
+				square.graphics.beginFill(0x0000FF, 0.5); 
+				square.graphics.drawRect(0, CANVAS.height - squareSize, squareSize, squareSize); 
+				square.graphics.endFill(); 
+				CANVAS.addChild(square);
+			}
+
 			//Start the drawing
 			if(drawTimer && drawTimer.running)
 			{
@@ -318,7 +337,10 @@ package {
 				x2Pos = randomRange(0, CANVAS.width - CANVAS.x);
 				y2Pos = randomRange(0, CANVAS.height - CANVAS.y);
 			}
+			
+			MonsterDebugger.trace(this, "Canvas x1: " + CANVAS.x + " y1: " + CANVAS.y  + " width: " + CANVAS.width + " height: " + CANVAS.height );
 			MonsterDebugger.trace(this, "x1: " + x1Pos + " y1: " + y1Pos + " x2: " + x2Pos + " y2: " + y2Pos);
+
 			if(prevX1Pos != x1Pos || prevY1Pos != y1Pos){
 				pencilDraw.graphics.moveTo(x1Pos, y1Pos); //Moves the Drawing Position to the Mouse Position
 				prevX1Pos = x1Pos;
@@ -751,6 +773,10 @@ package {
 		*/
 		public function paramChanged( event:ChangeEvent ):void 
 		{
+
+			var tDist:Number;
+			var tSub:Number;
+
 			//MonsterDebugger.trace(this, "Param Changed: " + event.object, "Interactive Phase");
 			switch(event.object)
 			{
@@ -834,22 +860,26 @@ package {
 
 				case paramCursorXPos:
 					//Move the brush via the x-axis 
-					x1Pos = paramCursorXPos.getValue() * (CANVAS.width - CANVAS.x);
+					x1Pos = (paramCursorXPos.getValue() * (canvasBounds.width));
+					checkLocation();
 					break;
 
 				case paramCursorYPos:
 					//Move the brush via the y-axis 
-					y1Pos = paramCursorYPos.getValue() * (CANVAS.height - CANVAS.y);
+					y1Pos = (paramCursorYPos.getValue() * (canvasBounds.height));
+					checkLocation();
 					break;
 
 				case paramBrushXPos:
 					//Paints via the x-axis 
-					x2Pos = paramBrushXPos.getValue() * (CANVAS.width - CANVAS.x);
+					x2Pos = (paramBrushXPos.getValue() * (canvasBounds.width));
+					checkLocation();
 					break;
 
 				case paramBrushYPos:
 					//Paints via the y-axis 
-					y2Pos = paramBrushYPos.getValue() * (CANVAS.height - CANVAS.y);
+					y2Pos = (paramBrushYPos.getValue() * (canvasBounds.height));
+					checkLocation();
 					break;
 
 				case paramBrushSize:
@@ -870,6 +900,50 @@ package {
 					MonsterDebugger.trace(this, event.object);
 					break;
 			}
+		}
+
+		private function checkLocation():void
+		{
+			//x1
+			if(x1Pos >= (canvasBounds.width + canvasBounds.x)) {
+				x1Pos = (canvasBounds.width - brushSize) - canvasBounds.x;
+			} else if(x1Pos < canvasBounds.x - brushSize) {
+				x1Pos = 0 + brushSize/2;
+			}
+
+			//x2
+			if(x2Pos >= (canvasBounds.width + canvasBounds.x)) {
+				x2Pos = (canvasBounds.width - brushSize) - canvasBounds.x;
+			} else if(x2Pos < canvasBounds.x - brushSize) {
+				x2Pos = 0 + brushSize/2;
+			}
+
+			//y1
+			if(y1Pos >= (canvasBounds.height + canvasBounds.y)) {
+				y1Pos = (canvasBounds.height - brushSize) - canvasBounds.y;
+			} else if(y1Pos < canvasBounds.y - brushSize) {
+				y1Pos = 0 + brushSize/2;
+			}
+
+			//y2
+			if(y2Pos >= (canvasBounds.height + canvasBounds.y)) {
+				y2Pos = (canvasBounds.height - brushSize) - canvasBounds.y;
+			} else if(y2Pos < canvasBounds.y - brushSize) {
+				y2Pos = 0 + brushSize/2;
+			}
+		}
+
+		/**
+		*
+		* Calculate distance between two points
+		* @url http://www.ilike2flash.com/2011/01/as3-distance-between-two-points.html
+		**/
+		
+		private function distanceTwoPoints(x1:Number, x2:Number,  y1:Number, y2:Number):Number 
+		{
+			var dx:Number = x1-x2;
+			var dy:Number = y1-y2;
+			return Math.sqrt(dx * dx + dy * dy);
 		}
 
 		/**
