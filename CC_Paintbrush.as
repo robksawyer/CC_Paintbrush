@@ -65,9 +65,8 @@ package {
 		private var paramEraser:EventParameter;
 		private var paramClear:EventParameter;
 		private var paramHideApp:EventParameter;
-
-		private var paramLine:BooleanParameter;
-		private var paramCurve:BooleanParameter;
+		private var paramLine:EventParameter;
+		private var paramCurve:EventParameter;
 
 		private var paramDraw:FloatParameter;
 		private var paramDrawDelay:FloatParameter;
@@ -136,6 +135,8 @@ package {
 		public var CANVAS:MovieClip;
 		public var SWATCH:MovieClip;
 		public var BRUSH:MovieClip;
+		public var LINE:MovieClip;
+		public var CURVE:MovieClip;
 		public var PENCIL:MovieClip;
 		public var ERASER:MovieClip;
 		public var BRUSHES:MovieClip;
@@ -160,6 +161,8 @@ package {
 			CANVAS = this["canvas"];
 			SWATCH = this["colorSwatch"];
 			BRUSH = this["brush"];
+			CURVE = this["curve"];
+			LINE = this["line"];
 			PENCIL = this["pencil"];
 			ERASER = this["eraser"];
 			BRUSHES = this["brushes"];
@@ -223,11 +226,13 @@ package {
 		  paramBrush = resolume.addEventParameter("Start Brush");
 		  paramPencil = resolume.addEventParameter("Start Pencil");
 		  paramEraser = resolume.addEventParameter("Start Eraser");
+		  paramLine = resolume.addEventParameter("Start Lines");
+		  paramCurve = resolume.addEventParameter("Start Curves");
 		  paramClear = resolume.addEventParameter("Clear");
 		  paramHideApp = resolume.addEventParameter("Toggle App");
 
-		  paramLine = resolume.addBooleanParameter("Make Lines", false);
-		  paramCurve = resolume.addBooleanParameter("Make Curves", false);
+		  //paramLine = resolume.addBooleanParameter("Make Lines", false);
+		  //paramCurve = resolume.addBooleanParameter("Make Curves", false);
 
 		  paramDraw = resolume.addFloatParameter("Draw", 0.6 );
 		  paramDrawDelay = resolume.addFloatParameter("Draw Speed", 0.2 );
@@ -292,7 +297,7 @@ package {
 
 			/* Highlight, sets the Pencil Tool Icon to the color version, and hides any other tool */
 			highlightTool(BRUSH);
-			hideTools(ERASER, PENCIL);
+			hideTools(ERASER, PENCIL, CURVE, LINE);
 
 			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
 			chooseColor(paramBrushColor.getValue());
@@ -368,19 +373,8 @@ package {
 		{
 			drawing = true;
 			if(prevX2Pos != x2Pos || prevY2Pos != y2Pos){
-				if(paramLine.getValue() == true)
-				{
-					pencilDraw.graphics.lineTo(x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
-				}
-				else if(paramCurve.getValue() == true)
-				{
-					//TODO: Figure out how to keep this within the bounds
-					pencilDraw.graphics.curveTo(x1Pos, y2Pos, x2Pos, y1Pos); //Draws a line from the current Mouse position to the moved Mouse position
-				}
-				else
-				{
-					pencilDraw.graphics.lineTo(x1Pos+1, y1Pos+1); //Draws a line from the current Mouse position to the moved Mouse position
-				}
+				
+				pencilDraw.graphics.lineTo(x1Pos+1, y1Pos+1); //Draws a line from the current Mouse position to the moved Mouse position
 				
 				prevX2Pos = x2Pos;
 				prevY2Pos = y2Pos;
@@ -432,7 +426,7 @@ package {
 
 			/* Highlight, sets the Pencil Tool Icon to the color version, and hides any other tool */
 			highlightTool(PENCIL);
-			hideTools(ERASER, BRUSH);
+			hideTools(ERASER, BRUSH, CURVE, LINE);
 
 			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
 			chooseColor(paramBrushColor.getValue());
@@ -491,18 +485,7 @@ package {
 			drawing = true;
 			if(prevX2Pos != x2Pos || prevY2Pos != y2Pos){
 			
-				if(paramLine.getValue() == true)
-				{
-					pencilDraw.graphics.lineTo(x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
-				}
-				else if(paramCurve.getValue() == true)
-				{
-					pencilDraw.graphics.curveTo(x1Pos, y1Pos, x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
-				}
-				else
-				{
-					pencilDraw.graphics.lineTo(x1Pos+1, y1Pos+1); //Draws a line from the current Mouse position to the moved Mouse position
-				}
+				pencilDraw.graphics.lineTo(x1Pos+1, y1Pos+1); //Draws a line from the current Mouse position to the moved Mouse position
 
 				prevX2Pos = x2Pos;
 				prevY2Pos = y2Pos;
@@ -519,6 +502,215 @@ package {
 			drawing = false;
 			drawTimer.stop();
 			drawTimer.removeEventListener("timer", startPencilTool);
+		}
+
+
+		/**
+		*
+		* Main Line tool method
+		*
+		**/
+		private function LineTool():void
+		{
+			/* Quit active tool */
+
+			quitActiveTool(); //This function will be created later
+
+			/* Set to Active */
+			active = "Line"; //Sets the active variable to "Pencil"
+			PENCILS.visible = true;
+
+			if(!curPencil)
+			{
+				curPencil = PENCILS.pencil1;
+			}
+
+			pencilDraw = new Shape(); //We add a new shape to draw always in top (in case of text, or eraser drawings)
+			CANVAS.addChild(pencilDraw); //Add that shape to the CANVAS MovieClip
+
+			/* Adds the listeners to the board MovieClip, to draw just in it */
+			if(TESTING)
+			{
+				drawDelay = paramDrawDelay.getValue() * 10000;
+				//drawRepeat = paramDrawRepeat.getValue() * 10;
+			}
+			
+
+			/* Highlight, sets the Pencil Tool Icon to the color version, and hides any other tool */
+			highlightTool(LINE);
+			hideTools(ERASER, BRUSH, CURVE, PENCIL);
+
+			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
+			chooseColor(paramBrushColor.getValue());
+			changeBrushSize();
+
+			//Start the draw timer
+			if(drawTimer && drawTimer.running)
+			{
+				drawTimer.stop();
+			}
+			drawTimer = new Timer(drawDelay, 0);
+			drawTimer.addEventListener("timer", startLineTool);
+			drawTimer.start();
+		}
+
+		/**
+		*
+		* Starts the drawing
+		*
+		**/
+		private function startLineTool(e:TimerEvent):void
+		{
+			MonsterDebugger.trace(this, "x1: " + x1Pos + " y1: " + y1Pos + " x2: " + x2Pos + " y2: " + y2Pos);
+			if(prevX1Pos != x1Pos || prevY1Pos != y1Pos){
+				pencilDraw.graphics.moveTo(x1Pos, y1Pos); //Moves the Drawing Position to the Mouse Position
+				prevX1Pos = x1Pos;
+				prevY1Pos = y1Pos;
+			}
+			pencilDraw.graphics.lineStyle(brushSize, activeColor);//Sets the line thickness to the ShapeSize MovieClip size and sets its color to the current active color
+		 
+			if(paramDraw.getValue() >= 0.5)
+			{
+				drawLineTool(); //Adds a listener to the next function
+			}
+			else
+			{
+			  stopLineTool();
+			}
+		}
+
+		/**
+		*
+		* Start the actual drawing
+		*
+		**/
+		
+		private function drawLineTool():void
+		{
+			drawing = true;
+			if(prevX2Pos != x2Pos || prevY2Pos != y2Pos){
+			
+				pencilDraw.graphics.lineTo(x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+
+				prevX2Pos = x2Pos;
+				prevY2Pos = y2Pos;
+			}
+		}
+
+		/**
+		*
+		* Stop the drawing
+		*
+		**/
+		private function stopLineTool():void
+		{
+			drawing = false;
+			drawTimer.stop();
+			drawTimer.removeEventListener("timer", startLineTool);
+		}
+
+
+		/**
+		*
+		* Main Line tool method
+		*
+		**/
+		private function CurveTool():void
+		{
+			/* Quit active tool */
+
+			quitActiveTool(); //This function will be created later
+
+			/* Set to Active */
+			active = "Curve"; //Sets the active variable to "Pencil"
+			PENCILS.visible = true;
+
+			if(!curPencil)
+			{
+				curPencil = PENCILS.pencil1;
+			}
+
+			pencilDraw = new Shape(); //We add a new shape to draw always in top (in case of text, or eraser drawings)
+			CANVAS.addChild(pencilDraw); //Add that shape to the CANVAS MovieClip
+
+			/* Adds the listeners to the board MovieClip, to draw just in it */
+			if(TESTING)
+			{
+				drawDelay = paramDrawDelay.getValue() * 10000;
+				//drawRepeat = paramDrawRepeat.getValue() * 10;
+			}
+			
+
+			/* Highlight, sets the Pencil Tool Icon to the color version, and hides any other tool */
+			highlightTool(CURVE);
+			hideTools(ERASER, BRUSH, LINE, PENCIL);
+
+			/* Sets the active color variable based on the Color Transform value and uses that color for the shapeSize MovieClip */
+			chooseColor(paramBrushColor.getValue());
+			changeBrushSize();
+
+			//Start the draw timer
+			if(drawTimer && drawTimer.running)
+			{
+				drawTimer.stop();
+			}
+			drawTimer = new Timer(drawDelay, 0);
+			drawTimer.addEventListener("timer", startCurveTool);
+			drawTimer.start();
+		}
+
+		/**
+		*
+		* Starts the drawing
+		*
+		**/
+		private function startCurveTool(e:TimerEvent):void
+		{
+			MonsterDebugger.trace(this, "x1: " + x1Pos + " y1: " + y1Pos + " x2: " + x2Pos + " y2: " + y2Pos);
+			if(prevX1Pos != x1Pos || prevY1Pos != y1Pos){
+				pencilDraw.graphics.moveTo(x1Pos, y1Pos); //Moves the Drawing Position to the Mouse Position
+				prevX1Pos = x1Pos;
+				prevY1Pos = y1Pos;
+			}
+			pencilDraw.graphics.lineStyle(brushSize, activeColor);//Sets the line thickness to the ShapeSize MovieClip size and sets its color to the current active color
+		 
+			if(paramDraw.getValue() >= 0.5)
+			{
+				drawCurveTool(); //Adds a listener to the next function
+			}
+			else
+			{
+			  stopCurveTool();
+			}
+		}
+
+		/**
+		*
+		* Start the actual drawing
+		*
+		**/
+		private function drawCurveTool():void
+		{
+			drawing = true;
+			if(prevX2Pos != x2Pos || prevY2Pos != y2Pos){
+			
+				pencilDraw.graphics.curveTo(x1Pos, y1Pos, x2Pos, y2Pos); //Draws a line from the current Mouse position to the moved Mouse position
+			
+				prevX2Pos = x2Pos;
+				prevY2Pos = y2Pos;
+			}
+		}
+
+		/**
+		*
+		* Stop the drawing
+		*
+		**/
+		private function stopCurveTool():void
+		{
+			drawing = false;
+			drawTimer.stop();
+			drawTimer.removeEventListener("timer", startCurveTool);
 		}
 		
 
@@ -550,7 +742,7 @@ package {
 
 			/* Highlight */
 			highlightTool(ERASER);
-			hideTools(PENCIL, BRUSH);
+			hideTools(PENCIL, BRUSH, CURVE, LINE);
 		
 			/* Use White Color */
 			ct.color = 0xFFFFFF;
@@ -664,6 +856,18 @@ package {
 					CANVAS.removeEventListener(Event.ENTER_FRAME, startEraserTool);
 					break;
 
+				case "Line":
+					stopLineTool();
+					PENCILS.visible = false;
+					CANVAS.removeEventListener(Event.ENTER_FRAME, startLineTool);
+					break;
+
+				case "Curve":
+					stopCurveTool();
+					PENCILS.visible = false;
+					CANVAS.removeEventListener(Event.ENTER_FRAME, startCurveTool);
+					break;
+
 				case "Clear":
 					clearBoard();
 					break;
@@ -680,10 +884,12 @@ package {
 
 		/* Hides the tools in the parameters */
 
-		private function hideTools(tool1:MovieClip, tool2:MovieClip):void
+		private function hideTools(tool1:MovieClip, tool2:MovieClip, tool3:MovieClip, tool4:MovieClip):void
 		{
 			tool1.gotoAndStop(1);
 			tool2.gotoAndStop(1);
+			tool3.gotoAndStop(1);
+			tool4.gotoAndStop(1);
 		}
 
 		/**
@@ -701,7 +907,7 @@ package {
 				updateToolSize(BRUSHES["brush" + nBrush]);
 				
 			}
-			else if(active == "Pencil")
+			else if(active == "Pencil" || active == "Curve" || active == "Line")
 			{
 				var nPencil:int = int(paramBrushSize.getValue() * totalPencils);
 				MonsterDebugger.trace(this, "New pencil: " + nPencil, "Pencil");
@@ -709,6 +915,11 @@ package {
 			}
 		}
 
+		/**
+		*
+		* Updates the tool size for pencil and brush
+		*
+		**/
 		private function updateToolSize(tool:MovieClip):void
 		{
 			//Remove the highlight from other brushes
@@ -719,21 +930,27 @@ package {
 					BRUSHES["brush" + i].gotoAndStop(1);
 				}
 				curBrush = tool;
+
+				//Update the brush size
+				brushSize = tool.width;
+				if(brushSize < 1)
+				{
+					brushSize = 1;
+				}
 			}
-			else if(active == "Pencil")
+			else if(active == "Pencil" || active == "Curve" || active == "Line")
 			{
 				for(var j=1;j<=totalPencils;j++)
 				{
 					PENCILS["pencil" + j].gotoAndStop(1);
 				}
 				curPencil = tool;
-			}
 
-			//Update the brush size
-			brushSize = tool.width;
-			if(brushSize < 1)
-			{
-				brushSize = 1;
+				brushSize = tool.width;
+				if(brushSize < 0.4)
+				{
+					brushSize = 0.5;
+				}
 			}
 
 			//Highlight the current tool
@@ -752,6 +969,8 @@ package {
 				PENCILS.visible = true;
 				BRUSHES.visible = true;
 				PENCIL.visible = true;
+				LINE.visible = true;
+				CURVE.visible = true;
 				ERASER.visible = true;
 				BRUSH.visible = true;
 				SWATCH.visible = true;
@@ -763,6 +982,8 @@ package {
 				PENCILS.visible = false;
 				BRUSHES.visible = false;
 				PENCIL.visible = false;
+				LINE.visible = false;
+				CURVE.visible = false;
 				ERASER.visible = false;
 				BRUSH.visible = false;
 				SWATCH.visible = false;
@@ -808,6 +1029,32 @@ package {
 					{
 						MonsterDebugger.trace(this,"Pencil selected!", "Tool");
 						PencilTool();
+						clickCounter = 0;
+					}
+					break;
+
+				case paramLine:
+					if(clickCounter < 1)
+					{
+						clickCounter++;
+					}
+					else
+					{
+						MonsterDebugger.trace(this,"Line selected!", "Tool");
+						LineTool();
+						clickCounter = 0;
+					}
+					break;
+
+				case paramCurve:
+					if(clickCounter < 1)
+					{
+						clickCounter++;
+					}
+					else
+					{
+						MonsterDebugger.trace(this,"Curve selected!", "Tool");
+						CurveTool();
 						clickCounter = 0;
 					}
 					break;
@@ -925,16 +1172,16 @@ package {
 
 			//y1
 			if(y1Pos >= (canvasBounds.height + canvasBounds.y)) {
-				y1Pos = (canvasBounds.height - brushSize) - canvasBounds.y;
-			} else if(y1Pos < canvasBounds.y - brushSize) {
 				y1Pos = 0 + brushSize/2;
+			} else if(y1Pos < canvasBounds.y - brushSize) {
+				y1Pos = (canvasBounds.height - brushSize) - canvasBounds.y;
 			}
 
 			//y2
 			if(y2Pos >= (canvasBounds.height + canvasBounds.y)) {
-				y2Pos = (canvasBounds.height - brushSize) - canvasBounds.y;
-			} else if(y2Pos < canvasBounds.y - brushSize) {
 				y2Pos = 0 + brushSize/2;
+			} else if(y2Pos < canvasBounds.y - brushSize) {
+				y2Pos = (canvasBounds.height - brushSize) - canvasBounds.y;
 			}
 		}
 
