@@ -900,16 +900,35 @@ package {
 		private function changeBrushSize():void
 		{
 			var maxVal = 1;
+			var minVal = 0.1;
+			var pVal;
 			if(active == "Brush")
 			{
-				var nBrush:int = int(paramBrushSize.getValue() * totalBrushes);
+				if(paramBrushSize.getValue() < minVal)
+				{
+					pVal = minVal;
+				}
+				else
+				{
+					pVal = paramBrushSize.getValue();
+				}
+				var nBrush:int = int(pVal * totalBrushes);
 				MonsterDebugger.trace(this, "New brush: " + nBrush, "Brush");
 				updateToolSize(BRUSHES["brush" + nBrush]);
 				
 			}
 			else if(active == "Pencil" || active == "Curve" || active == "Line")
 			{
-				var nPencil:int = int(paramBrushSize.getValue() * totalPencils);
+				minVal = 0.5;
+				if(paramBrushSize.getValue() < minVal)
+				{
+					pVal = minVal;
+				}
+				else
+				{
+					pVal = paramBrushSize.getValue();
+				}
+				var nPencil:int = int(pVal * totalPencils);
 				MonsterDebugger.trace(this, "New pencil: " + nPencil, "Pencil");
 				updateToolSize(PENCILS["pencil" + nPencil]);
 			}
@@ -933,10 +952,6 @@ package {
 
 				//Update the brush size
 				brushSize = tool.width;
-				if(brushSize < 1)
-				{
-					brushSize = 1;
-				}
 			}
 			else if(active == "Pencil" || active == "Curve" || active == "Line")
 			{
@@ -947,10 +962,6 @@ package {
 				curPencil = tool;
 
 				brushSize = tool.width;
-				if(brushSize < 0.4)
-				{
-					brushSize = 0.5;
-				}
 			}
 
 			//Highlight the current tool
