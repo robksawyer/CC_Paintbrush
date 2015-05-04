@@ -157,6 +157,7 @@ package {
 			MonsterDebugger.initialize(this);
 			MonsterDebugger.clear();
 
+
 			BG = this["bg"];
 			CANVAS = this["canvas"];
 			SWATCH = this["colorSwatch"];
@@ -1123,25 +1124,25 @@ package {
 
 				case paramCursorXPos:
 					//Move the brush via the x-axis 
-					x1Pos = (paramCursorXPos.getValue() * (canvasBounds.width));
+					x1Pos = (paramCursorXPos.getValue() * canvasBounds.width);
 					checkLocation();
 					break;
 
 				case paramCursorYPos:
 					//Move the brush via the y-axis 
-					y1Pos = (paramCursorYPos.getValue() * (canvasBounds.height));
+					y1Pos = (paramCursorYPos.getValue() * canvasBounds.height);
 					checkLocation();
 					break;
 
 				case paramBrushXPos:
 					//Paints via the x-axis 
-					x2Pos = (paramBrushXPos.getValue() * (canvasBounds.width));
+					x2Pos = (paramBrushXPos.getValue() * canvasBounds.width);
 					checkLocation();
 					break;
 
 				case paramBrushYPos:
 					//Paints via the y-axis 
-					y2Pos = (paramBrushYPos.getValue() * (canvasBounds.height));
+					y2Pos = (paramBrushYPos.getValue() * canvasBounds.height);
 					checkLocation();
 					break;
 
@@ -1167,32 +1168,34 @@ package {
 
 		private function checkLocation():void
 		{
+			var bufferX = 0;
+			var bufferY = 0;
 			//x1
 			if(x1Pos >= (canvasBounds.width + canvasBounds.x)) {
-				x1Pos = (canvasBounds.width - brushSize) - canvasBounds.x;
-			} else if(x1Pos < canvasBounds.x - brushSize) {
-				x1Pos = 0 + brushSize/2;
+				x1Pos = canvasBounds.width - brushSize;
+			} else if(x1Pos <= 0) {
+				x1Pos = 0 + brushSize + bufferX;
 			}
 
 			//x2
 			if(x2Pos >= (canvasBounds.width + canvasBounds.x)) {
-				x2Pos = (canvasBounds.width - brushSize) - canvasBounds.x;
-			} else if(x2Pos < canvasBounds.x - brushSize) {
-				x2Pos = 0 + brushSize/2;
+				x2Pos = canvasBounds.width - brushSize;
+			} else if(x2Pos <= 0) {
+				x2Pos = 0 + brushSize + bufferX;
 			}
 
 			//y1
 			if(y1Pos >= (canvasBounds.height + canvasBounds.y)) {
-				y1Pos = 0 + brushSize/2;
-			} else if(y1Pos < canvasBounds.y - brushSize) {
-				y1Pos = (canvasBounds.height - brushSize) - canvasBounds.y;
+				y1Pos = canvasBounds.height - brushSize;
+			} else if(y1Pos <= 0) {
+				y1Pos = 0 + brushSize - bufferY;
 			}
 
 			//y2
 			if(y2Pos >= (canvasBounds.height + canvasBounds.y)) {
-				y2Pos = 0 + brushSize/2;
-			} else if(y2Pos < canvasBounds.y - brushSize) {
-				y2Pos = (canvasBounds.height - brushSize) - canvasBounds.y;
+				y2Pos = canvasBounds.height - brushSize;
+			} else if(y2Pos <= 0) {
+				y2Pos = 0 + brushSize - bufferY;
 			}
 		}
 
